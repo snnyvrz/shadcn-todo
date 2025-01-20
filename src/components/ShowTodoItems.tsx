@@ -1,26 +1,10 @@
-import { format } from "date-fns";
 import { TodoCard } from "@/components/TodoCard";
+import { TodoItems } from "@/mockData";
 export interface TodoItem {
   title: string;
   dueDate: string;
   doneDate?: string;
 }
-
-const TodoItems: TodoItem[] = [
-  {
-    title: "Buy groceries",
-    dueDate: format(new Date(), "EEEE, dd/MM/yyyy"),
-  },
-  {
-    title: "Walk the dog",
-    dueDate: format(new Date(), "EEEE, dd/MM/yyyy"),
-  },
-  {
-    title: "Do laundry",
-    dueDate: format(new Date(), "EEEE, dd/MM/yyyy"),
-    doneDate: format(new Date(), "EEEE, dd/MM/yyyy"),
-  },
-];
 
 export const ShowTodoItems = () => {
   const todo = TodoItems.filter((item) => !item.doneDate);

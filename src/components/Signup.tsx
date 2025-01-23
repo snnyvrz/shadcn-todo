@@ -12,26 +12,52 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 
 const formSchema = z.object({
-  userName: z.string().min(2).max(50),
+  username: z.string().min(2).max(50),
   password: z.string().min(8).max(50),
-  confirmPassword: z.string().min(8).max(50),
+  confirm_password: z.string().min(8).max(50),
 });
 
 export const Signup = () => {
+  const navigate = useNavigate();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      userName: "",
+      username: "",
       password: "",
-      confirmPassword: "",
+      confirm_password: "",
+    },
+  });
+
+  const { isPending, mutate, isSuccess } = useMutation({
+    mutationKey: ["signup"],
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      try {
+        const response = await fetch("http://localhost:8000/signup", {
+          method: "POST",
+          body: JSON.stringify(values),
+          headers: {
+            "content-type": "application/json",
+          },
+        });
+        return await response.json();
+      } catch (error) {
+        console.error("Error signing up", error);
+      }
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+    mutate(values);
   };
+
+  if (isSuccess) {
+    navigate("/");
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -44,7 +70,7 @@ export const Signup = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="userName"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Username</FormLabel>
@@ -74,7 +100,7 @@ export const Signup = () => {
               />
               <FormField
                 control={form.control}
-                name="confirmPassword"
+                name="confirm_password"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
@@ -89,7 +115,7 @@ export const Signup = () => {
                   </FormItem>
                 )}
               />
-              <Button className="w-full" type="submit">
+              <Button className="w-full" type="submit" disabled={isPending}>
                 Sign Up
               </Button>
             </form>

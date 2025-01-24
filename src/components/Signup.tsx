@@ -9,11 +9,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
+import { AlertCircle, CircleX } from "lucide-react";
+import { useState } from "react";
 
 const formSchema = z.object({
   username: z.string().min(2).max(50),
@@ -22,6 +26,8 @@ const formSchema = z.object({
 });
 
 export const Signup = () => {
+  const [showAlert, setShowAlert] = useState("");
+
   const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -33,20 +39,23 @@ export const Signup = () => {
     },
   });
 
-  const { isPending, mutate, isSuccess } = useMutation({
+  const { isPending, mutate } = useMutation({
     mutationKey: ["signup"],
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      try {
-        const response = await fetch("http://localhost:8000/signup", {
-          method: "POST",
-          body: JSON.stringify(values),
-          headers: {
-            "content-type": "application/json",
-          },
-        });
-        return await response.json();
-      } catch (error) {
-        console.error("Error signing up", error);
+      const response = await fetch("http://localhost:8000/signup", {
+        method: "POST",
+        body: JSON.stringify(values),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.status == 200) {
+        navigate("/");
+      } else {
+        setShowAlert(data.detail);
       }
     },
   });
@@ -55,73 +64,93 @@ export const Signup = () => {
     mutate(values);
   };
 
-  if (isSuccess) {
-    navigate("/");
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <Card>
-        <CardHeader>
-          <CardTitle>Sign Up</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Username" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Password"
-                        type="password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="confirm_password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Confirm Password"
-                        type="password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button className="w-full" type="submit" disabled={isPending}>
-                Sign Up
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+    <>
+      <div className="fixed top-4 flex items-center justify-center w-screen z-10">
+        <Alert
+          className="max-w-lg shadow-lg p-0"
+          hidden={!showAlert}
+          variant="destructive"
+        >
+          <Button
+            className="absolute top-0 right-0 hover:bg-red-100"
+            variant="ghost"
+            onClick={() => setShowAlert("")}
+          >
+            <CircleX className="stroke-red-500 w-4 h-4" />
+          </Button>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle className="m-4">Error</AlertTitle>
+          <AlertDescription className="mb-4">{showAlert}</AlertDescription>
+          <Progress value={33} className="w-full bg-red-200" />
+        </Alert>
+      </div>
+      <div className="min-h-screen flex items-center justify-center z-0">
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign Up</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl onChange={() => setShowAlert("")}>
+                        <Input placeholder="Username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl onChange={() => setShowAlert("")}>
+                        <Input
+                          placeholder="Password"
+                          type="password"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirm_password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl onChange={() => setShowAlert("")}>
+                        <Input
+                          placeholder="Confirm Password"
+                          type="password"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button className="w-full" type="submit" disabled={isPending}>
+                  Sign Up
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 };

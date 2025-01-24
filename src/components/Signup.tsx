@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { AlertCircle, CircleX } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const formSchema = z.object({
   username: z.string().min(2).max(50),
@@ -27,6 +27,7 @@ const formSchema = z.object({
 
 export const Signup = () => {
   const [showAlert, setShowAlert] = useState("");
+  const [progress, setProgress] = useState(90);
 
   const navigate = useNavigate();
 
@@ -49,12 +50,13 @@ export const Signup = () => {
           "content-type": "application/json",
         },
       });
-      return await response.json();
+      return response;
     },
-    onSuccess: (data) => {
-      if (data.status == 200) {
+    onSuccess: async (response) => {
+      if (response.ok) {
         navigate("/");
       } else {
+        const data = await response.json();
         setShowAlert(data.detail);
       }
     },
@@ -63,6 +65,21 @@ export const Signup = () => {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     mutate(values);
   };
+
+  useEffect(() => {
+    if (showAlert) {
+      const interval = setInterval(() => {
+        setProgress((prev) => (prev > -20 ? prev - 1 : 90));
+      }, 100);
+
+      if (progress === 0) {
+        setShowAlert("");
+        setProgress(90);
+      }
+
+      return () => clearInterval(interval);
+    }
+  }, [showAlert, progress]);
 
   return (
     <>
@@ -82,7 +99,11 @@ export const Signup = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle className="m-4">Error</AlertTitle>
           <AlertDescription className="mb-4">{showAlert}</AlertDescription>
-          <Progress value={33} className="w-full bg-red-200" />
+          <Progress
+            value={progress}
+            className="w-full bg-red-200"
+            indicatorColor="bg-red-500"
+          />
         </Alert>
       </div>
       <div className="min-h-screen flex items-center justify-center z-0">

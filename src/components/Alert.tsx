@@ -1,4 +1,4 @@
-import { useEffect, useContext } from "react";
+import { useEffect, useContext, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -14,13 +14,17 @@ export const AlertComponent = () => {
     dispatch,
   } = useContext(AlertContext);
 
+  const [isPaused, setIsPaused] = useState(false);
+
   useEffect(() => {
+    if (isPaused) return;
+
     const interval = setInterval(() => {
       dispatch({ type: "SET_PROGRESS", payload: progress - 2 });
     }, 100);
 
     return () => clearInterval(interval);
-  }, [progress, dispatch]);
+  }, [progress, dispatch, isPaused]);
 
   useEffect(() => {
     if (progress === 0) {
@@ -37,7 +41,12 @@ export const AlertComponent = () => {
         transition={{ duration: 0.3 }}
         exit={{ y: -200 }}
       >
-        <Alert className="max-w-lg shadow-lg p-0" variant={type_}>
+        <Alert
+          className="max-w-lg shadow-lg p-0"
+          variant={type_}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
           <Button
             className={cn(
               type_ === "success" ? "hover:bg-success/10" : "hover:bg-error/10",

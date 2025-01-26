@@ -30,7 +30,7 @@
     --radius: 0.5rem;
     --error: 0 100% 50%;
     --error-foreground: 60 9.1% 97.8%;
-    --success: 120 100% 50%;
+    --success: 120 100% 40%;
     --success-foreground: 24 9.8% 10%;
   }
   .dark {
@@ -60,7 +60,7 @@
     --chart-5: 340 75% 55%;
     --error: 0 100% 50%;
     --error-foreground: 60 9.1% 97.8%;
-    --success: 120 100% 50%;
+    --success: 120 100% 40%;
     --success-foreground: 24 9.8% 10%;
   }
 }

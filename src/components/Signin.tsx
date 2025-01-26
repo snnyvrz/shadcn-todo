@@ -14,6 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router";
 import { useMutation } from "@tanstack/react-query";
+import { useContext } from "react";
+import { AlertContext } from "@/lib/AlertContext";
 
 const formSchema = z.object({
   username: z.string().min(2).max(50),
@@ -22,6 +24,7 @@ const formSchema = z.object({
 
 export const Signin = () => {
   const navigate = useNavigate();
+  const { dispatch } = useContext(AlertContext);
 
   const { isPending, mutate } = useMutation({
     mutationKey: ["signin"],
@@ -37,10 +40,23 @@ export const Signin = () => {
     },
     onSuccess: async (response) => {
       if (response.ok) {
-        console.log("Sign in successful");
+        dispatch({
+          type: "SHOW_ALERT",
+          payload: {
+            type_: "success",
+            message: "You successfully logged in",
+          },
+        });
         navigate("/");
       } else {
-        console.log("Sign in failed");
+        const data = await response.json();
+        dispatch({
+          type: "SHOW_ALERT",
+          payload: {
+            type_: "error",
+            message: data.detail,
+          },
+        });
       }
     },
   });

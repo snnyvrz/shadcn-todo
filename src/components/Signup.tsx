@@ -9,15 +9,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
-import { AlertCircle, CircleX } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useContext } from "react";
+import { AlertContext } from "@/lib/AlertContext";
 
 const formSchema = z.object({
   username: z.string().min(2).max(50),
@@ -26,8 +24,7 @@ const formSchema = z.object({
 });
 
 export const Signup = () => {
-  const [showAlert, setShowAlert] = useState("");
-  const [progress, setProgress] = useState(90);
+  const { dispatch } = useContext(AlertContext);
 
   const navigate = useNavigate();
 
@@ -54,10 +51,20 @@ export const Signup = () => {
     },
     onSuccess: async (response) => {
       if (response.ok) {
+        dispatch({
+          type: "SHOW_ALERT",
+          payload: {
+            type_: "success",
+            message: "Account created successfully",
+          },
+        });
         navigate("/");
       } else {
         const data = await response.json();
-        setShowAlert(data.detail);
+        dispatch({
+          type: "SHOW_ALERT",
+          payload: { type_: "error", message: data.detail },
+        });
       }
     },
   });
@@ -66,46 +73,8 @@ export const Signup = () => {
     mutate(values);
   };
 
-  useEffect(() => {
-    if (showAlert) {
-      const interval = setInterval(() => {
-        setProgress((prev) => (prev > -20 ? prev - 1 : 90));
-      }, 100);
-
-      if (progress === 0) {
-        setShowAlert("");
-        setProgress(90);
-      }
-
-      return () => clearInterval(interval);
-    }
-  }, [showAlert, progress]);
-
   return (
     <>
-      <div className="fixed top-4 flex items-center justify-center w-screen z-10">
-        <Alert
-          className="max-w-lg shadow-lg p-0"
-          hidden={!showAlert}
-          variant="destructive"
-        >
-          <Button
-            className="absolute top-0 right-0 hover:bg-red-100"
-            variant="ghost"
-            onClick={() => setShowAlert("")}
-          >
-            <CircleX className="stroke-red-500 w-4 h-4" />
-          </Button>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle className="m-4">Error</AlertTitle>
-          <AlertDescription className="mb-4">{showAlert}</AlertDescription>
-          <Progress
-            value={progress}
-            className="w-full bg-red-200"
-            indicatorColor="bg-red-500"
-          />
-        </Alert>
-      </div>
       <div className="min-h-screen flex items-center justify-center z-0">
         <Card>
           <CardHeader>
@@ -114,8 +83,9 @@ export const Signup = () => {
           <CardContent>
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4"
+                onChange={() => dispatch({ type: "HIDE_ALERT" })}
+                onSubmit={form.handleSubmit(onSubmit)}
               >
                 <FormField
                   control={form.control}
@@ -123,7 +93,7 @@ export const Signup = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Username</FormLabel>
-                      <FormControl onChange={() => setShowAlert("")}>
+                      <FormControl>
                         <Input placeholder="Username" {...field} />
                       </FormControl>
                       <FormMessage />
@@ -136,7 +106,7 @@ export const Signup = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Password</FormLabel>
-                      <FormControl onChange={() => setShowAlert("")}>
+                      <FormControl>
                         <Input
                           placeholder="Password"
                           type="password"
@@ -153,7 +123,7 @@ export const Signup = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Confirm Password</FormLabel>
-                      <FormControl onChange={() => setShowAlert("")}>
+                      <FormControl>
                         <Input
                           placeholder="Confirm Password"
                           type="password"

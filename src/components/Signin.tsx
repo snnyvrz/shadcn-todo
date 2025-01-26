@@ -12,23 +12,49 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link, useNavigate } from "react-router";
+import { useMutation } from "@tanstack/react-query";
 
 const formSchema = z.object({
-  userName: z.string().min(2).max(50),
+  username: z.string().min(2).max(50),
   password: z.string().min(8).max(50),
 });
 
 export const Signin = () => {
+  const navigate = useNavigate();
+
+  const { isPending, mutate } = useMutation({
+    mutationKey: ["signin"],
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      const response = await fetch("http://localhost:8000/signin", {
+        method: "POST",
+        body: JSON.stringify(values),
+        headers: {
+          "content-type": "application/json",
+        },
+      });
+      return response;
+    },
+    onSuccess: async (response) => {
+      if (response.ok) {
+        console.log("Sign in successful");
+        navigate("/");
+      } else {
+        console.log("Sign in failed");
+      }
+    },
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      userName: "",
+      username: "",
       password: "",
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+    mutate(values);
   };
 
   return (
@@ -42,7 +68,7 @@ export const Signin = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="userName"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Username</FormLabel>
@@ -70,11 +96,17 @@ export const Signin = () => {
                   </FormItem>
                 )}
               />
-              <Button className="w-full" type="submit">
+              <Button className="w-full" type="submit" disabled={isPending}>
                 Sign In
               </Button>
             </form>
           </Form>
+          <div className="flex flex-row gap-2 mt-4 text-center">
+            <p>Not a member yet?</p>
+            <Link to="/signup" className="text-blue-500">
+              Sign Up
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

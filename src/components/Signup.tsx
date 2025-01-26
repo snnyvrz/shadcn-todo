@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useContext } from "react";
 import { AlertContext } from "@/lib/AlertContext";
 
@@ -139,6 +139,12 @@ export const Signup = () => {
                 </Button>
               </form>
             </Form>
+            <div className="flex flex-row gap-2 mt-4 text-center">
+              <p>Already a member?</p>
+              <Link to="/signin" className="text-blue-500">
+                Sign In
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

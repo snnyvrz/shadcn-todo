@@ -12,64 +12,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router";
-import { useMutation } from "@tanstack/react-query";
+import { Link } from "react-router";
 import { useContext } from "react";
 import { AlertContext } from "@/lib/AlertContext";
-
-const formSchema = z.object({
-  username: z.string().min(2).max(50),
-  password: z.string().min(8).max(50),
-});
+import { useSignInMutation } from "@/api";
+import { signInFormSchema } from "@/api/types";
 
 export const Signin = () => {
-  const navigate = useNavigate();
+  const { isPending, mutate } = useSignInMutation();
   const { dispatch } = useContext(AlertContext);
 
-  const { isPending, mutate } = useMutation({
-    mutationKey: ["signin"],
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
-      const response = await fetch("http://localhost:8000/signin", {
-        method: "POST",
-        body: JSON.stringify(values),
-        headers: {
-          "content-type": "application/json",
-        },
-      });
-      return response;
-    },
-    onSuccess: async (response) => {
-      if (response.ok) {
-        dispatch({
-          type: "SHOW_ALERT",
-          payload: {
-            type_: "success",
-            message: "You successfully logged in",
-          },
-        });
-        navigate("/");
-      } else {
-        const data = await response.json();
-        dispatch({
-          type: "SHOW_ALERT",
-          payload: {
-            type_: "error",
-            message: data.detail,
-          },
-        });
-      }
-    },
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof signInFormSchema>>({
+    resolver: zodResolver(signInFormSchema),
     defaultValues: {
       username: "",
       password: "",
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: z.infer<typeof signInFormSchema>) => {
     mutate(values);
   };
 
@@ -81,7 +42,11 @@ export const Signin = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4"
+              onChange={() => dispatch({ type: "HIDE_ALERT" })}
+            >
               <FormField
                 control={form.control}
                 name="username"

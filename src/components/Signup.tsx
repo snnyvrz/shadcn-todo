@@ -12,24 +12,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
+import { useSignUpMutation } from "@/api";
 import { useContext } from "react";
 import { AlertContext } from "@/lib/AlertContext";
-
-const formSchema = z.object({
-  username: z.string().min(2).max(50),
-  password: z.string().min(8).max(50),
-  confirm_password: z.string().min(8).max(50),
-});
+import { signUpFormSchema } from "@/api/types";
 
 export const Signup = () => {
   const { dispatch } = useContext(AlertContext);
+  const { mutate, isPending } = useSignUpMutation();
 
-  const navigate = useNavigate();
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof signUpFormSchema>>({
+    resolver: zodResolver(signUpFormSchema),
     defaultValues: {
       username: "",
       password: "",
@@ -37,40 +31,8 @@ export const Signup = () => {
     },
   });
 
-  const { isPending, mutate } = useMutation({
-    mutationKey: ["signup"],
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
-      const response = await fetch("http://localhost:8000/signup", {
-        method: "POST",
-        body: JSON.stringify(values),
-        headers: {
-          "content-type": "application/json",
-        },
-      });
-      return response;
-    },
-    onSuccess: async (response) => {
-      if (response.ok) {
-        dispatch({
-          type: "SHOW_ALERT",
-          payload: {
-            type_: "success",
-            message: "Account created successfully",
-          },
-        });
-        navigate("/");
-      } else {
-        const data = await response.json();
-        dispatch({
-          type: "SHOW_ALERT",
-          payload: { type_: "error", message: data.detail },
-        });
-      }
-    },
-  });
-
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    mutate(values);
+  const onSubmit = (values: z.infer<typeof signUpFormSchema>) => {
+    mutate({ username: values.username, password: values.password });
   };
 
   return (

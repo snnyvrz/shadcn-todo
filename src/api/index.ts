@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { AlertContext } from "@/lib/AlertContext";
 import { useMutation } from "@tanstack/react-query";
 import { signInFormSchema, signUpFormSchema } from "./types";
+import { AuthContext } from "@/lib/AuthContext";
 
 const ignite = async (
   path: string,
@@ -12,26 +13,22 @@ const ignite = async (
   values: Record<string, string>
 ) => {
   const options =
-    method === "POST"
-      ? mode === "x-www-form-urlencoded"
-        ? {
-            method: "POST",
-            body: new URLSearchParams(values),
-            headers: {
-              "content-type":
-                "application/x-www-form-urlencoded; charset=UTF-8",
-            },
-          }
-        : {
-            method: "POST",
-            body: JSON.stringify(values),
-            headers: { "content-type": "application/json; charset=UTF-8" },
-          }
-      : undefined;
-  const response = await fetch(
-    `${import.meta.env.VITE_API_URL}/${path}`,
-    options
-  );
+    mode === "x-www-form-urlencoded"
+      ? {
+          body: new URLSearchParams(values),
+          headers: {
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+          },
+        }
+      : {
+          body: JSON.stringify(values),
+          headers: { "content-type": "application/json; charset=UTF-8" },
+        };
+  const response = await fetch(`${import.meta.env.VITE_API_URL}/${path}`, {
+    method,
+    credentials: "include",
+    ...options,
+  });
   return response;
 };
 
@@ -77,7 +74,8 @@ export const useSignUpMutation = () => {
 };
 
 export const useSignInMutation = () => {
-  const { dispatch } = useContext(AlertContext);
+  const { dispatch: alertDispatch } = useContext(AlertContext);
+  const { dispatch: authDispatch } = useContext(AuthContext);
 
   const navigate = useNavigate();
 
@@ -94,17 +92,19 @@ export const useSignInMutation = () => {
     },
     onSuccess: async (response) => {
       if (response.ok) {
-        dispatch({
+        alertDispatch({
           type: "SHOW_ALERT",
           payload: {
             type_: "success",
             message: "You successfully logged in",
           },
         });
+        const data = await response.json();
+        authDispatch({ type: "login", payload: data.access_token });
         navigate("/");
       } else {
         const data = await response.json();
-        dispatch({
+        alertDispatch({
           type: "SHOW_ALERT",
           payload: { type_: "error", message: data.detail },
         });

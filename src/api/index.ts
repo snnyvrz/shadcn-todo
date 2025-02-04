@@ -34,6 +34,7 @@ const ignite = async (
 
 export const useSignUpMutation = () => {
   const { dispatch } = useContext(AlertContext);
+  const { dispatch: authDispatch } = useContext(AuthContext);
 
   const navigate = useNavigate();
 
@@ -59,6 +60,8 @@ export const useSignUpMutation = () => {
             message: "Account created successfully",
           },
         });
+        const access_token = await response.json();
+        authDispatch({ type: "login", payload: access_token });
         navigate("/");
       } else {
         const data = await response.json();

@@ -32,6 +32,7 @@ export const Navbar = () => {
 
       return await response.json();
     },
+    retry: false,
   });
 
   const { refetch } = useQuery<{ access_token: string }>({
@@ -51,8 +52,9 @@ export const Navbar = () => {
   });
 
   if (error) {
-    refetch();
-    retry();
+    refetch()
+      .then(() => retry())
+      .catch(() => dispatch({ type: "logout" }));
   }
 
   return (

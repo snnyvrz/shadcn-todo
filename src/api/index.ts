@@ -1,73 +1,65 @@
-import { z } from "zod";
 import { useContext } from "react";
 import { useNavigate } from "react-router";
 import { AlertContext } from "@/lib/AlertContext";
 import { useMutation } from "@tanstack/react-query";
-import { signInFormSchema, signUpFormSchema } from "./types";
+import {
+  AccessToken,
+  APIError,
+  SignInFormValues,
+  type SignUpFormValues,
+} from "./types";
 import { AuthContext } from "@/lib/AuthContext";
+import Axios, { AxiosError } from "axios";
 
-const ignite = async (
-  path: string,
-  method: "POST" | "GET",
-  mode: "json" | "x-www-form-urlencoded",
-  values: Record<string, string>
-) => {
-  const options =
-    mode === "x-www-form-urlencoded"
-      ? {
-          body: new URLSearchParams(values),
-          headers: {
-            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-          },
-        }
-      : {
-          body: JSON.stringify(values),
-          headers: { "content-type": "application/json; charset=UTF-8" },
-        };
-  const response = await fetch(`${import.meta.env.VITE_API_URL}/${path}`, {
-    method,
-    credentials: "include",
-    ...options,
-  });
-  return response;
+const axios = Axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+});
+
+const postForm = <R, T>(url: string) => {
+  const ignite = async (data: T) => {
+    const response = await axios.post<R>(url, data, {
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+    });
+    return response;
+  };
+  return ignite;
 };
 
 export const useSignUpMutation = () => {
-  const { dispatch } = useContext(AlertContext);
+  const { dispatch: alertDispatch } = useContext(AlertContext);
   const { dispatch: authDispatch } = useContext(AuthContext);
 
   const navigate = useNavigate();
 
   const { isPending, mutate } = useMutation({
     mutationKey: ["signup"],
-    mutationFn: async (
-      values: Omit<z.infer<typeof signUpFormSchema>, "confirm_password">
-    ) => {
-      const response = await ignite(
-        "auth/signup",
-        "POST",
-        "x-www-form-urlencoded",
-        values
-      );
-      return response;
-    },
+    mutationFn: postForm<AccessToken, SignUpFormValues>("auth/signup"),
     onSuccess: async (response) => {
-      if (response.ok) {
-        dispatch({
-          type: "SHOW_ALERT",
-          payload: {
-            type_: "success",
-            message: "Account created successfully",
-          },
-        });
-        const access_token = await response.json();
-        authDispatch({ type: "login", payload: access_token });
-        navigate("/");
-      } else {
-        const data = await response.json();
-        dispatch({
+      alertDispatch({
+        type: "SHOW_ALERT",
+        payload: {
+          type_: "success",
+          message: "Account created successfully",
+        },
+      });
+      const access_token = response.data.access_token;
+      authDispatch({ type: "login", payload: access_token });
+      navigate("/");
+    },
+    onError: async (error: AxiosError<APIError>) => {
+      if (error.response) {
+        const data = error.response.data;
+        alertDispatch({
           type: "SHOW_ALERT",
           payload: { type_: "error", message: data.detail },
+        });
+      } else {
+        alertDispatch({
+          type: "SHOW_ALERT",
+          payload: {
+            type_: "error",
+            message: "An error occurred, please try again later",
+          },
         });
       }
     },
@@ -84,32 +76,32 @@ export const useSignInMutation = () => {
 
   const { isPending, mutate } = useMutation({
     mutationKey: ["signin"],
-    mutationFn: async (values: z.infer<typeof signInFormSchema>) => {
-      const response = await ignite(
-        "auth/signin",
-        "POST",
-        "x-www-form-urlencoded",
-        values
-      );
-      return response;
-    },
+    mutationFn: postForm<AccessToken, SignInFormValues>("auth/signin"),
     onSuccess: async (response) => {
-      if (response.ok) {
-        alertDispatch({
-          type: "SHOW_ALERT",
-          payload: {
-            type_: "success",
-            message: "You successfully logged in",
-          },
-        });
-        const data = await response.json();
-        authDispatch({ type: "login", payload: data.access_token });
-        navigate("/");
-      } else {
-        const data = await response.json();
+      alertDispatch({
+        type: "SHOW_ALERT",
+        payload: {
+          type_: "success",
+          message: "You successfully logged in",
+        },
+      });
+      authDispatch({ type: "login", payload: response.data.access_token });
+      navigate("/");
+    },
+    onError: async (error: AxiosError<APIError>) => {
+      if (error.response) {
+        const data = error.response.data;
         alertDispatch({
           type: "SHOW_ALERT",
           payload: { type_: "error", message: data.detail },
+        });
+      } else {
+        alertDispatch({
+          type: "SHOW_ALERT",
+          payload: {
+            type_: "error",
+            message: "An error occurred, please try again later",
+          },
         });
       }
     },
